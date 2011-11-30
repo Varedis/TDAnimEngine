@@ -1,53 +1,128 @@
-string $_animations[] = {"walk", "walk_stop", "stop_walk"};
-int $_animationsFramesInit[]  = {1, 30, 35};
-int $_animationsFramesEnd[]   = {26, 35, 40};
-
-// a lot of this script I got it from:
-// http://xyz2.net/mel/
-
-
-string $sel[] = `ls -selection`;
-
-
-string $master = "ROOT";
-
-string $attrList[] = {"rz"};
-
-
-print("<root>\n<animations>\n");
-
-for ($a=0; $a<`size $_animations`; $a++)
-{
-    print ("\t<animation id='"+$_animations[$a]+"'>\n");
-    print ("\t\t<nodes>\n");
-    for ($o=0; $o<`size $sel`; $o++)
-    {         
-        print ("\t\t\t<node id='"+$sel[$o]+"'>\n");
-        float $keyedframes[] = `keyframe -time ($_animationsFramesInit[$a]+":"+$_animationsFramesEnd[$a]) -query -timeChange ($sel[$o]+"."+$attrList[0])`;
-        float $keyedvalues[] = `keyframe -time ($_animationsFramesInit[$a]+":"+$_animationsFramesEnd[$a]) -query -valueChange ($sel[$o]+"."+$attrList[0])`;
-        for ($k=0; $k<`size $keyedframes`; $k++) {
-            // for each frame...
-            int $frame = ($keyedframes[$k] - $_animationsFramesInit[$a]);
-            if ($_animationsFramesInit[$a]>1) {
-               if ($frame==0) $frame = 1;
-            } else {
-                $frame += 1;
-            }
-            // go through attrs list
-            print ("\t\t\t\t<frame id='"+$frame+"'>\n");
-            print ("\t\t\t\t\t<transform attr='"+$attrList[0]+"' value='"+$keyedvalues[$k]+"' />\n");
-            print ("\t\t\t\t</frame>\n");
-       }
-       print ("\t\t\t</node>\n");
-
+global proc generateXML() {
+    global int $numberOfLoops = 20;
+    global string $winName = "TDAWindow";
+    global string $fieldName = "rootName";
+    global string $animationField = "animName";
+    global string $startField = "startFrame";
+    global string $endField = "endFrame";
+    global string $textName = "output";
+    
+    string $output;
+    
+    string $_animations[] = { "" };
+    for ($i = 0; $i < $numberOfLoops; $i++) {       
+        string $nameField = $animationField+$i;
+        string $returnText = `textField -q -tx $nameField`;
+        if(strip($returnText) != "")
+            $_animations[$i] = strip($returnText);
     }
-    print ("\t\t</nodes>\n"); 
-    print ("\t</animation>\n");
-} 
+    
+    int $_animationsFramesInit[]  = { };
+    for ($i = 0; $i < $numberOfLoops; $i++) {       
+        string $nameField = $startField+$i;
+        int $returnText = `textField -q -tx $nameField`;
+        if(strip($returnText) != 0)
+            $_animationsFramesInit[$i] = strip($returnText);
+    }
+    
+    int $_animationsFramesEnd[]   = { };
+    for ($i = 0; $i < $numberOfLoops; $i++) {       
+        string $nameField = $endField+$i;
+        int $returnText = `textField -q -tx $nameField`;
+        if(strip($returnText) != 0)
+            $_animationsFramesEnd[$i] = strip($returnText);
+    }
+    
+    string $sel[] = `ls -selection`;
+    string $master = `textField -q -tx $fieldName`;
+    string $attrList[] = {"rz"};
+    
+    $output = "<root>\n<animations>\n";
+    print("<root>\n<animations>\n");
+    
+    for ($a=0; $a<`size $_animations`; $a++)
+    {
+        $output += "\t<animation id='"+$_animations[$a]+"'>\n";
+        $output += "\t\t<nodes>\n";
+        print ("\t<animation id='"+$_animations[$a]+"'>\n");
+        print ("\t\t<nodes>\n");
+        for ($o=0; $o<`size $sel`; $o++)
+        {         
+            $output += "\t\t\t<node id='"+$sel[$o]+"'>\n";
+            print ("\t\t\t<node id='"+$sel[$o]+"'>\n");
+            float $keyedframes[] = `keyframe -time ($_animationsFramesInit[$a]+":"+$_animationsFramesEnd[$a]) -query -timeChange ($sel[$o]+"."+$attrList[0])`;
+            float $keyedvalues[] = `keyframe -time ($_animationsFramesInit[$a]+":"+$_animationsFramesEnd[$a]) -query -valueChange ($sel[$o]+"."+$attrList[0])`;
+            for ($k=0; $k<`size $keyedframes`; $k++) {
+                // for each frame...
+                int $frame = ($keyedframes[$k] - $_animationsFramesInit[$a]);
+                if ($_animationsFramesInit[$a]>1) {
+                   if ($frame==0) $frame = 1;
+                } else {
+                    $frame += 1;
+                }
+                // go through attrs list
+                $output += "\t\t\t\t<frame id='"+$frame+"'>\n";
+                $output += "\t\t\t\t\t<transform attr='"+$attrList[0]+"' value='"+$keyedvalues[$k]+"' />\n";
+                $output += "\t\t\t\t</frame>\n";
+                print ("\t\t\t\t<frame id='"+$frame+"'>\n");
+                print ("\t\t\t\t\t<transform attr='"+$attrList[0]+"' value='"+$keyedvalues[$k]+"' />\n");
+                print ("\t\t\t\t</frame>\n");
+           }
+           $output += "\t\t\t</node>\n";
+           print ("\t\t\t</node>\n");
+    
+        }
+        $output += "\t\t</nodes>\n";
+        $output += "\t</animation>\n";
+        print ("\t\t</nodes>\n"); 
+        print ("\t</animation>\n");
+    } 
+    $output += "</animations>\n</root>";
+    print("</animations>\n</root>");
+    
+    scrollField -e -tx $output $textName;
+}
 
-print("</animations>\n</root>");
+if (`window -q -exists $winName`)
+    deleteUI $winName;
+//  Create the window.
+//
+window -title "TDAnimEngine Animation Export" $winName;
+    scrollLayout ColumnLayout;
 
+    frameLayout -labelVisible false -marginWidth 5 -marginHeight 5;
+        columnLayout;
 
-
-
-
+            text -l "1. Enter Root Node Name";
+                textField -w 350 -tx "" $fieldName;
+            
+            
+            text -l "2. Enter the Animation Details";
+            rowLayout -numberOfColumns 4 -cw4 90 160 50 50;
+                text -l "";
+                text -l "Animation Name";
+                text -l "Start\nFrame";
+                text -l "End\nFrame";
+                setParent ..;
+            for($i = 0; $i < $numberOfLoops; $i++) {
+                rowLayout -numberOfColumns 4 -cw4 15 100 20 20;
+                    string $nameField = $animationField+$i;
+                    string $frameStartField = $startField+$i;
+                    string $frameEndField = $endField+$i;
+                        int $rowNum = $i+1;
+                        text -l $rowNum;
+                        textField -w 227 -tx "" $nameField;
+                        textField -w 50 -tx "" $frameStartField;
+                        textField -w 50 -tx "" $frameEndField;
+                        setParent ..;
+            }
+                
+            text -l "3. Click to Generate .XML";
+                button -w 350 -l "Generate" -c "generateXML";
+            
+            text -l "4. Copy and Paste this into a text\n file and place in your project";
+               // text -l "" $textName;
+                scrollField -w 350 -h 300 -wordWrap true -text "" -editable false $textName;
+                
+window -e -wh 390 411 $winName;
+showWindow $winName;

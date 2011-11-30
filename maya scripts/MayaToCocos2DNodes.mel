@@ -1,147 +1,114 @@
-// MayaToCocos2DNodes.mel
-// The Dam Armada 2011
-//
-// GUI by Rob Scott (Varedis) 20/11/2011
-//
-// thanks to:
-// http://xyz2.net/mel/
-
-string $winName = "TDAWindow";
-string $fieldName = "rootName";
-string $textName = "output";
-
-global proc XMLGenerate() {
+global proc generateXML() {
+    global int $numberOfLoops = 20;
+    global string $winName = "TDAWindow";
+    global string $fieldName = "rootName";
+    global string $animationField = "animName";
+    global string $textName = "output";
+    
     string $output;
-	string $master = `textField -q -tx "rootName"`;
-	
-	string $sel[] = `ls -selection`;
-	
-	float $originalPos[] = `xform -ws -q -t ($master)`;
-	
-	$output = "<root>\n<nodesConfig>\n";
-	print ("<root>\n<nodesConfig>\n");
-	
-	string $fileName;
-	float $width = 0.0;
-	float $height = 0.0;
-	float $apX = 0.0;
-	float $apY = 0.0;
-	float $ppoint[] = `xform -q -t ($master+".rotatePivot")`;
-	float $px = $ppoint[0]*10;
-	float $py = $ppoint[1]*10;
-	
-	$mat = getSurfaceShader($master);
-	if(`objExists $mat`){
-	    $fileText = getTextureFromMaterial($mat);
-	    $fileName = filepart(`getAttr ($fileText+".fileTextureName")`);  
-	    
-	    $width = `getAttr ($fileText+".outSizeX")`/100;
-	    $height = `getAttr ($fileText+".outSizeY")`/100;
-	    $apX = ($width/2+$px)/$width;
-	    $apY = ($height/2+$py)/$height;
-	}else{
-	    $fileName = "";
-	    $width = 0.0;
-	    $height = 0.0;
-	    $apX = 0.5;
-	    $apY = 0.5;
-	}
-	
-	float $rot[] = `getAttr ($master+".r")`;
-	float $scl[] = `getAttr ($master+".s")`;
-	
-	$output += "\t<node id='"+$master+"' parent='root' x='"+$originalPos[0]*10+"' y='"+$originalPos[1]*10+"' image='"+$fileName+"' apx='"+$apX+"' apy='"+$apY+"' rz='"+$rot[2]+"' sx='"+$scl[0]+"' sy='"+$scl[1]+"' w='"+$width+"' h='"+$height+"' />\n";
-	print ("\t<node id='"+$master+"' parent='root' x='"+$originalPos[0]*10+"' y='"+$originalPos[1]*10+"' image='"+$fileName+"' apx='"+$apX+"' apy='"+$apY+"' rz='"+$rot[2]+"' sx='"+$scl[0]+"' sy='"+$scl[1]+"' w='"+$width+"' h='"+$height+"' />\n");
-	
-	string $children[] = `ls -selection`;
-	
-	$parentnode = $master;
-	
-	for ($o = 0; $o < `size $children`; $o++) {
-	    if ($children[$o] != $master) {
-			// -------------------------------------------------------------		
-			// GET POSITION
-	        string $parent[] = `listRelatives -p ($children[$o])`;
-			float $pos[]  = `getAttr ($children[$o]+".t")`;
-			float $rot[] = `getAttr ($children[$o]+".r")`;
-			float $scl[] = `getAttr ($children[$o]+".s")`;
-	
-			// -------------------------------------------------------------
-			// GET ANCHOR POINT
-	        float $ppoint[] = `xform -q -ws -t ($children[$o]+".rotatePivot")`;
-	        float $px = $ppoint[0]*10;
-	        float $py = $ppoint[1]*10;
-	
-	        $mat = getSurfaceShader($children[$o]);
-	        if(`objExists $mat`){
-			    $fileText = getTextureFromMaterial($mat);
-			    $fileName = filepart(`getAttr ($fileText+".fileTextureName")`);
-	
-			    // -------------------------------------------------------------		
-			    // OUTPUT
-			    
-			    $output += "\t<node id='"+$children[$o]+"' parent='"+$parent[0]+"' image='"+$fileName+"' x='"+$pos[0]*10+"' y='"+$pos[1]*10+"' z='"+$pos[2]*10+"' rz='"+$rot[2]+"' sx='"+$scl[0]+"' sy='"+$scl[2]+"' apx='"+$px+"' apy='"+$py+"' />\n";
-	            print ("\t<node id='"+$children[$o]+"' parent='"+$parent[0]+"' image='"+$fileName+"' x='"+$pos[0]*10+"' y='"+$pos[1]*10+"' z='"+$pos[2]*10+"' rz='"+$rot[2]+"' sx='"+$scl[0]+"' sy='"+$scl[2]+"' apx='"+$px+"' apy='"+$py+"' />\n");
-	        }
-	    }
-	}
-	$output += "</nodesConfig>\n</root>";
-	print ("</nodesConfig>\n</root>");
-	
-	//text -e -l $output "output";
-	scrollField -e -tx $output "output";
+    
+    string $_animations[] = { "" };
+    for ($i = 0; $i < $numberOfLoops; $i++) {       
+        string $nameField = $animationField+$i;
+        string $returnText = `textField -q -tx $nameField`;
+        if(strip($returnText) != "")
+            $_animations[$i] = strip($returnText);
+    }
+    print($_animations);
+    
+    int $_animationsFramesInit[]  = {1, 30, 35};
+    int $_animationsFramesEnd[]   = {26, 35, 40};
+    
+    string $sel[] = `ls -selection`;
+    string $master = `textField -q -tx $fieldName`;
+    string $attrList[] = {"rz"};
+    
+    $output = "<root>\n<animations>\n";
+    print("<root>\n<animations>\n");
+    
+    for ($a=0; $a<`size $_animations`; $a++)
+    {
+        $output += "\t<animation id='"+$_animations[$a]+"'>\n";
+        $output += "\t\t<nodes>\n";
+        print ("\t<animation id='"+$_animations[$a]+"'>\n");
+        print ("\t\t<nodes>\n");
+        for ($o=0; $o<`size $sel`; $o++)
+        {         
+            $output += "\t\t\t<node id='"+$sel[$o]+"'>\n";
+            print ("\t\t\t<node id='"+$sel[$o]+"'>\n");
+            float $keyedframes[] = `keyframe -time ($_animationsFramesInit[$a]+":"+$_animationsFramesEnd[$a]) -query -timeChange ($sel[$o]+"."+$attrList[0])`;
+            float $keyedvalues[] = `keyframe -time ($_animationsFramesInit[$a]+":"+$_animationsFramesEnd[$a]) -query -valueChange ($sel[$o]+"."+$attrList[0])`;
+            for ($k=0; $k<`size $keyedframes`; $k++) {
+                // for each frame...
+                int $frame = ($keyedframes[$k] - $_animationsFramesInit[$a]);
+                if ($_animationsFramesInit[$a]>1) {
+                   if ($frame==0) $frame = 1;
+                } else {
+                    $frame += 1;
+                }
+                // go through attrs list
+                $output += "\t\t\t\t<frame id='"+$frame+"'>\n";
+                $output += "\t\t\t\t\t<transform attr='"+$attrList[0]+"' value='"+$keyedvalues[$k]+"' />\n";
+                $output += "\t\t\t\t</frame>\n";
+                print ("\t\t\t\t<frame id='"+$frame+"'>\n");
+                print ("\t\t\t\t\t<transform attr='"+$attrList[0]+"' value='"+$keyedvalues[$k]+"' />\n");
+                print ("\t\t\t\t</frame>\n");
+           }
+           $output += "\t\t\t</node>\n";
+           print ("\t\t\t</node>\n");
+    
+        }
+        $output += "\t\t</nodes>\n";
+        $output += "\t</animation>\n";
+        print ("\t\t</nodes>\n"); 
+        print ("\t</animation>\n");
+    } 
+    $output += "</animations>\n</root>";
+    print("</animations>\n</root>");
+    
+    scrollField -e -tx $output $textName;
 }
-	
-// HELPER METHODS -------------------------------------------------------------------
-
-proc string getSurfaceShader (string $objName) {
-	string $myShapeNode[] = `listRelatives -children -shapes $objName`;
-	string $mySGs[] = `listConnections -type shadingEngine $myShapeNode[0]`;
-	if(!`objExists $mySGs[0]`)
-	    return "";
-	string $surfaceShader[] = `listConnections ($mySGs[0] + ".surfaceShader")`;
-	return $surfaceShader[0];
-}
-
-proc string rootNode( string $object ) {
-	string $buffer[];
-	tokenize $object "." $buffer;
-	return $buffer[0];
-}
-
-proc string getTextureFromMaterial( string $material ) {
-	string $texture = "";
-	string $class[] = getClassification( `nodeType $material` );
-	if (`connectionInfo -id ( $material + ".color" )`){
-		$texture = rootNode( `connectionInfo -sfd ( $material + ".color" )` );
-	}
-	return $texture;
-}
-
-global proc string filepart( string $path ) {
-	string $filepart = match( "[^/\\]*$", $path );
-	return $filepart;
-};
 
 if (`window -q -exists $winName`)
     deleteUI $winName;
 //  Create the window.
 //
-window -title "TDAnimEngine" $winName;
-    columnLayout ColumnLayout;
+window -title "TDAnimEngine Animation Export" $winName;
+    scrollLayout ColumnLayout;
 
     frameLayout -labelVisible false -marginWidth 5 -marginHeight 5;
         columnLayout;
 
             text -l "1. Enter Root Node Name";
-                textField -w 350 -tx "Name" $fieldName;
-                
-            text -l "2. Click to Generate .XML";
-                button -w 350 -l "Generate" -c "XMLGenerate";
+                textField -w 350 -tx "" $fieldName;
             
-            text -l "3. Copy and Paste this into a text\n file and place in your project";
+            
+            text -l "2. Enter the Animation Details";
+            rowLayout -numberOfColumns 4 -cw4 90 160 50 50;
+                text -l "";
+                text -l "Animation Name";
+                text -l "Start\nFrame";
+                text -l "End\nFrame";
+                setParent ..;
+            for($i = 0; $i < $numberOfLoops; $i++) {
+                rowLayout -numberOfColumns 4 -cw4 15 100 20 20;
+                    string $nameField = $animationField+$i;
+                    string $frameStartField = "startFrame"+$i;
+                    string $frameEndField = "endFrame"+$i;
+                        int $rowNum = $i+1;
+                        text -l $rowNum;
+                        textField -w 227 -tx "" $nameField;
+                        textField -w 50 -tx "" $frameStartField;
+                        textField -w 50 -tx "" $frameEndField;
+                        setParent ..;
+            }
+                
+            text -l "3. Click to Generate .XML";
+                button -w 350 -l "Generate" -c "generateXML";
+            
+            text -l "4. Copy and Paste this into a text\n file and place in your project";
                // text -l "" $textName;
                 scrollField -w 350 -h 300 -wordWrap true -text "" -editable false $textName;
                 
-window -e -wh 365 411 $winName;
+window -e -wh 390 411 $winName;
 showWindow $winName;
