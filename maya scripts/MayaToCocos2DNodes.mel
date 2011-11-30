@@ -1,0 +1,147 @@
+// MayaToCocos2DNodes.mel
+// The Dam Armada 2011
+//
+// GUI by Rob Scott (Varedis) 20/11/2011
+//
+// thanks to:
+// http://xyz2.net/mel/
+
+string $winName = "TDAWindow";
+string $fieldName = "rootName";
+string $textName = "output";
+
+global proc XMLGenerate() {
+    string $output;
+	string $master = `textField -q -tx "rootName"`;
+	
+	string $sel[] = `ls -selection`;
+	
+	float $originalPos[] = `xform -ws -q -t ($master)`;
+	
+	$output = "<root>\n<nodesConfig>\n";
+	print ("<root>\n<nodesConfig>\n");
+	
+	string $fileName;
+	float $width = 0.0;
+	float $height = 0.0;
+	float $apX = 0.0;
+	float $apY = 0.0;
+	float $ppoint[] = `xform -q -t ($master+".rotatePivot")`;
+	float $px = $ppoint[0]*10;
+	float $py = $ppoint[1]*10;
+	
+	$mat = getSurfaceShader($master);
+	if(`objExists $mat`){
+	    $fileText = getTextureFromMaterial($mat);
+	    $fileName = filepart(`getAttr ($fileText+".fileTextureName")`);  
+	    
+	    $width = `getAttr ($fileText+".outSizeX")`/100;
+	    $height = `getAttr ($fileText+".outSizeY")`/100;
+	    $apX = ($width/2+$px)/$width;
+	    $apY = ($height/2+$py)/$height;
+	}else{
+	    $fileName = "";
+	    $width = 0.0;
+	    $height = 0.0;
+	    $apX = 0.5;
+	    $apY = 0.5;
+	}
+	
+	float $rot[] = `getAttr ($master+".r")`;
+	float $scl[] = `getAttr ($master+".s")`;
+	
+	$output += "\t<node id='"+$master+"' parent='root' x='"+$originalPos[0]*10+"' y='"+$originalPos[1]*10+"' image='"+$fileName+"' apx='"+$apX+"' apy='"+$apY+"' rz='"+$rot[2]+"' sx='"+$scl[0]+"' sy='"+$scl[1]+"' w='"+$width+"' h='"+$height+"' />\n";
+	print ("\t<node id='"+$master+"' parent='root' x='"+$originalPos[0]*10+"' y='"+$originalPos[1]*10+"' image='"+$fileName+"' apx='"+$apX+"' apy='"+$apY+"' rz='"+$rot[2]+"' sx='"+$scl[0]+"' sy='"+$scl[1]+"' w='"+$width+"' h='"+$height+"' />\n");
+	
+	string $children[] = `ls -selection`;
+	
+	$parentnode = $master;
+	
+	for ($o = 0; $o < `size $children`; $o++) {
+	    if ($children[$o] != $master) {
+			// -------------------------------------------------------------		
+			// GET POSITION
+	        string $parent[] = `listRelatives -p ($children[$o])`;
+			float $pos[]  = `getAttr ($children[$o]+".t")`;
+			float $rot[] = `getAttr ($children[$o]+".r")`;
+			float $scl[] = `getAttr ($children[$o]+".s")`;
+	
+			// -------------------------------------------------------------
+			// GET ANCHOR POINT
+	        float $ppoint[] = `xform -q -ws -t ($children[$o]+".rotatePivot")`;
+	        float $px = $ppoint[0]*10;
+	        float $py = $ppoint[1]*10;
+	
+	        $mat = getSurfaceShader($children[$o]);
+	        if(`objExists $mat`){
+			    $fileText = getTextureFromMaterial($mat);
+			    $fileName = filepart(`getAttr ($fileText+".fileTextureName")`);
+	
+			    // -------------------------------------------------------------		
+			    // OUTPUT
+			    
+			    $output += "\t<node id='"+$children[$o]+"' parent='"+$parent[0]+"' image='"+$fileName+"' x='"+$pos[0]*10+"' y='"+$pos[1]*10+"' z='"+$pos[2]*10+"' rz='"+$rot[2]+"' sx='"+$scl[0]+"' sy='"+$scl[2]+"' apx='"+$px+"' apy='"+$py+"' />\n";
+	            print ("\t<node id='"+$children[$o]+"' parent='"+$parent[0]+"' image='"+$fileName+"' x='"+$pos[0]*10+"' y='"+$pos[1]*10+"' z='"+$pos[2]*10+"' rz='"+$rot[2]+"' sx='"+$scl[0]+"' sy='"+$scl[2]+"' apx='"+$px+"' apy='"+$py+"' />\n");
+	        }
+	    }
+	}
+	$output += "</nodesConfig>\n</root>";
+	print ("</nodesConfig>\n</root>");
+	
+	//text -e -l $output "output";
+	scrollField -e -tx $output "output";
+}
+	
+// HELPER METHODS -------------------------------------------------------------------
+
+proc string getSurfaceShader (string $objName) {
+	string $myShapeNode[] = `listRelatives -children -shapes $objName`;
+	string $mySGs[] = `listConnections -type shadingEngine $myShapeNode[0]`;
+	if(!`objExists $mySGs[0]`)
+	    return "";
+	string $surfaceShader[] = `listConnections ($mySGs[0] + ".surfaceShader")`;
+	return $surfaceShader[0];
+}
+
+proc string rootNode( string $object ) {
+	string $buffer[];
+	tokenize $object "." $buffer;
+	return $buffer[0];
+}
+
+proc string getTextureFromMaterial( string $material ) {
+	string $texture = "";
+	string $class[] = getClassification( `nodeType $material` );
+	if (`connectionInfo -id ( $material + ".color" )`){
+		$texture = rootNode( `connectionInfo -sfd ( $material + ".color" )` );
+	}
+	return $texture;
+}
+
+global proc string filepart( string $path ) {
+	string $filepart = match( "[^/\\]*$", $path );
+	return $filepart;
+};
+
+if (`window -q -exists $winName`)
+    deleteUI $winName;
+//  Create the window.
+//
+window -title "TDAnimEngine" $winName;
+    columnLayout ColumnLayout;
+
+    frameLayout -labelVisible false -marginWidth 5 -marginHeight 5;
+        columnLayout;
+
+            text -l "1. Enter Root Node Name";
+                textField -w 350 -tx "Name" $fieldName;
+                
+            text -l "2. Click to Generate .XML";
+                button -w 350 -l "Generate" -c "XMLGenerate";
+            
+            text -l "3. Copy and Paste this into a text\n file and place in your project";
+               // text -l "" $textName;
+                scrollField -w 350 -h 300 -wordWrap true -text "" -editable false $textName;
+                
+window -e -wh 365 411 $winName;
+showWindow $winName;
