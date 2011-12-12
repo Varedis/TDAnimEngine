@@ -62,12 +62,12 @@ It requires you have included in your Resources the same PNGs used in Maya to cr
 	
 It requires you have a SpriteSheet png for the character and it's generated PLIST with the same name. 
 
-***USING LOCATOR SUPPORT***
+###USING LOCATOR SUPPORT###
 
-Maya Setup:
+***Maya Setup:***
 Follow the same steps as setting up a plane, but use a locator instead, parent the locator to whatever you want it to follow. Make sure you select it when you run the export script.
 
-Cocos2d Setup:
+***Cocos2d Setup:***
 When you want to add a sprite to the locator inside cocos2d you simply need to run the following code:
 	CCNode *Locator = (CCNode *)[robot getPointByName:@"myLocator"];
         CCSprite *hat = [CCSprite spriteWithSpriteFrameName:@"RobotHat.png"];
