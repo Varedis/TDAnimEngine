@@ -69,6 +69,7 @@ Follow the same steps as setting up a plane, but use a locator instead, parent t
 
 ***Cocos2d Setup:***
 When you want to add a sprite to the locator inside cocos2d you simply need to run the following code:
+
 	CCNode *Locator = (CCNode *)[robot getPointByName:@"myLocator"];
         CCSprite *hat = [CCSprite spriteWithSpriteFrameName:@"RobotHat.png"];
         [Locator addChild:hat];
