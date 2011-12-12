@@ -1,8 +1,6 @@
 TDAnimEngine
 ============
 
-
-
 # Description #
 
 TDAnimEngine allows you to create cut-out characters and animations in Maya an export it to be use directly into Cocos2D through XML.
@@ -13,20 +11,19 @@ The library is composed of two parts:
 . **XCode lib**: the TDAnimEngine classes to be added to your XCode project  
 
 What you can do:  
-. create a character in Maya and recreate it in Cocos2D (including Z-depth, rotations and parenting)   
-. access the different pieces using from Cocos2D using the same name than you used in Maya  
-. use SpriteSheets instead of pngs   
-. create rotation based animation in Maya and apply them to your character in Cocos2D   
-. control events when an animation has looped, has stopped, etc   
-. define custom events that will be launch at specific frames  
-
+. Create a character in Maya and recreate it in Cocos2D (including Z-depth, rotations and parenting)   
+. Access the different pieces using from Cocos2D using the same name that you used in Maya  
+. Use SpriteSheets instead of pngs   
+. Create rotation based animation in Maya and apply them to your character in Cocos2D   
+. Control events when an animation has looped, has stopped, etc   
+. Define custom events that will be launch at specific frames
+. Add Maya Locators to your object so you can easily add extra objects at those positions inside Cocos2d
 
 # Dependencies: #
 
 **TBXML** is needed to parse the generated XML files.  
 Get it here: [TBXML](https://github.com/Tpbradley/TBXML)
 
-  
 # General Usage #
 
 ##Maya Scripts##
@@ -64,6 +61,17 @@ It requires you have included in your Resources the same PNGs used in Maya to cr
 	[self addChild:robot];
 	
 It requires you have a SpriteSheet png for the character and it's generated PLIST with the same name. 
+
+***USING LOCATOR SUPPORT***
+
+Maya Setup:
+Follow the same steps as setting up a plane, but use a locator instead, parent the locator to whatever you want it to follow. Make sure you select it when you run the export script.
+
+Cocos2d Setup:
+When you want to add a sprite to the locator inside cocos2d you simply need to run the following code:
+	CCNode *Locator = (CCNode *)[robot getPointByName:@"myLocator"];
+        CCSprite *hat = [CCSprite spriteWithSpriteFrameName:@"RobotHat.png"];
+        [Locator addChild:hat];
 
 ###IMPORTING ANIMATIONS###
 To import animations to your character use:
