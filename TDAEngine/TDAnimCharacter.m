@@ -59,6 +59,13 @@
     return character;
 }
 
++(TDAnimCharacter *) characterFromConfigFile:(NSString *)_fileStr andNamePrefix:(NSString *)_prefix andSpriteSheet:(BOOL)_spritesheet {
+    TDAnimCharacter *character = [[[self alloc] init] autorelease];
+    [character createCharacterWithXMLFile:_fileStr andNamePrefix:_prefix andSpriteSheet:_spritesheet];
+    
+    return character;
+}
+
 
 
 -(id) init
@@ -89,9 +96,9 @@
 -(void) drawRectangle:(CCSprite *)_sprite
 {
     CGSize s = [_sprite contentSize];
-    CGRect r = CGRectMake(-s.width / 2 + _sprite.anchorPointInPixels.x, -s.height / 2 + _sprite.anchorPointInPixels.y, s.width, s.height);
-    r.origin.x -= (_sprite.anchorPointInPixels.x);
-    r.origin.y += (_sprite.anchorPointInPixels.y/2);
+    CGRect r = CGRectMake(-s.width / 2 + _sprite.anchorPoint.x, -s.height / 2 + _sprite.anchorPoint.y, s.width, s.height);
+    r.origin.x -= (_sprite.anchorPoint.x);
+    r.origin.y += (_sprite.anchorPoint.y/2);
     
     ccDrawLine(ccp(r.origin.x, r.origin.y), ccp(r.origin.x+r.size.width, r.origin.y));
     ccDrawLine(ccp(r.origin.x + r.size.width, r.origin.y), ccp(r.origin.x + r.size.width, r.origin.y + r.size.height));
@@ -102,24 +109,19 @@
 }
 // LOOP
 
--(void) update: (ccTime) dt
-{
- 
- //   [self debug];
-    
+-(void) update: (ccTime) dt {
+//    [self debug];
     time    += dt;
     
     currentFrame = (int)(time/FPS) % currentAnimLength;
     
-    if (currentFrame==prevFrame) return;
+    if (currentFrame == prevFrame)
+        return;
     
     prevFrame = currentFrame;
     
     // PLAY FRAMES FOR ELEMENTS
-    
-    for (NSString *elStr in childrenTable)
-    {
-        
+    for (NSString *elStr in childrenTable) {
         TDAnimSpriteElement *el = [childrenTable valueForKey:elStr];
         
         [el __playFrame:currentFrame forAnimation:currentAnimStr];
@@ -233,12 +235,10 @@
 
 
 
--(void) playAnimation:(NSString *)_animStr loop:(BOOL)_loop wait:(BOOL)_wait
-{
+-(void) playAnimation:(NSString *)_animStr loop:(BOOL)_loop wait:(BOOL)_wait {
     currentAnimLoopable = _loop;
     
-    if (_wait == NO || currentAnimStr == nil)
-    {        
+    if (_wait == NO || currentAnimStr == nil) {        
         if ([delegate respondsToSelector:@selector(characterAnimationStarted:)])
             [delegate characterAnimationStarted:_animStr];
         
@@ -246,35 +246,29 @@
         currentAnimLength   = [[animationTable valueForKey:currentAnimStr] intValue];
         time                = 0;
     } else {
-        
         nextAnimStr         = _animStr;
         nextAnimLoopable    = _loop;
     }
     
-    if (isRunning == NO) 
-    {
+    if (isRunning == NO) {
         isRunning = YES;
         [self scheduleUpdate];
     }
 }
 
 
--(void) setFPS:(float)_fps
-{
+-(void) setFPS:(float)_fps {
     FPS = _fps;
 }
 
 
--(NSString *) getCurrentAnimation 
-{
+-(NSString *) getCurrentAnimation {
     return currentAnimStr;
 }
 
 
 // EVENTS MANAGEMENT
-
--(void) __parseEvents:(NSMutableDictionary *)_evtsList
-{
+-(void) __parseEvents:(NSMutableDictionary *)_evtsList {
     eventsTable = [_evtsList retain];
     
 }
@@ -300,11 +294,11 @@
 
 
 
--(void) addElement:(TDAnimSpriteElement *)_element withName:(NSString *)_name andParent:(NSString *)_parentStr
-{
+-(void) addElement:(TDAnimSpriteElement *)_element withName:(NSString *)_name andParent:(NSString *)_parentStr {
     CCNode  *parent = self;
     
-    if (_parentStr!=nil) parent = [self getChildByName:_parentStr];
+    if (_parentStr!=nil)
+        parent = [self getChildByName:_parentStr];
     
     [parent addChild:_element];
     
@@ -313,30 +307,50 @@
     [self.childrenTable setValue:_element forKey:_name];
 }
 
+-(TDAnimPointElement *) getPointByName:(NSString *)_name {
+    return (TDAnimPointElement *)[self.childrenTable valueForKey:_name];
+}
+
+-(void) addPoint:(TDAnimPointElement *)_point withName:(NSString *)_name andParent:(NSString *)_parentStr {
+    CCNode  *parent = self;
+    
+    if (_parentStr!=nil)
+        parent = [self getChildByName:_parentStr];
+    
+    [parent addChild:_point];
+    
+    [_point setName:_name];
+    
+    [self.childrenTable setValue:_point forKey:_name];
+}
+
 
 // --------------------------------------------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
--(void) createCharacterAnimationsFromXML:(NSString *)_xmlStr
-{
+-(void) createCharacterAnimationsFromXML:(NSString *)_xmlStr {
     BOOL success = [[[[TDAnimParser alloc] init] autorelease] parseXMLAnimationFile:_xmlStr toCharacter:self];
     if (!success) NSLog(@"TDA >> There was an error parsing the animation xml file %@", _xmlStr);
 }
 
--(void) createCharacterWithXMLFile:(NSString *)_xmlStr
-{
-    BOOL success = [[[[TDAnimParser alloc] init] autorelease] parseXML:_xmlStr toCharacter:self];
+-(void) createCharacterWithXMLFile:(NSString *)_xmlStr {
+    BOOL success = [[[[TDAnimParser alloc] init] autorelease] parseXML:_xmlStr toCharacter:self namePrefix:@""];
     
     if (!success) NSLog(@"TDA >> There was an error parsing the configuration xml file %@", _xmlStr);
 }
 
--(void) createCharacterWithXMLFile:(NSString *)_xmlStr andAtlasInfoFile:(NSString *)_atlasInfo
-{
+-(void) createCharacterWithXMLFile:(NSString *)_xmlStr andAtlasInfoFile:(NSString *)_atlasInfo {
     BOOL success = [[[[TDAnimParser alloc] init] autorelease] parseXML:_xmlStr toCharacter:self withAtlasFile:_atlasInfo];
     
     if (!success) NSLog(@"TDA >> The was an error parsing either the configuration file %@ or the atlasinfo file %@", _xmlStr, _atlasInfo);
+}
+
+-(void) createCharacterWithXMLFile:(NSString *)_xmlStr andNamePrefix:(NSString *)_prefix andSpriteSheet:(BOOL)_spritesheet {
+    BOOL success = [[[[TDAnimParser alloc] init] autorelease] parseXML:_xmlStr toCharacter:self withNamePrefix:_prefix withSpriteSheet:_spritesheet];
+    
+    if (!success) NSLog(@"TDA >> The was an error parsing either the configuration file %@", _xmlStr);
 }
 
 

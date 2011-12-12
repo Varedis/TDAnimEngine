@@ -11,6 +11,7 @@
 
 #import "TDAnimParser.h"
 #import "TDAnimSpriteElement.h"
+#import "TDAnimPointElement.h"
 #import "TDAnimEvent.h"
 
 @protocol TDAnimCharacter_Delegate;
@@ -43,17 +44,16 @@
 }
 
 @property (nonatomic, assign) id <TDAnimCharacter_Delegate> delegate;
-
 @property (nonatomic, retain) NSMutableDictionary *childrenTable;
-
 
 +(TDAnimCharacter *) character;
 +(TDAnimCharacter *) characterFromConfigFile:(NSString *)_fileStr;
 +(TDAnimCharacter *) characterFromConfigFile:(NSString *)_fileStr andAtlasInfoFile:(NSString *)_atlasInfo;
++(TDAnimCharacter *) characterFromConfigFile:(NSString *)_fileStr andNamePrefix:(NSString *)_prefix andSpriteSheet:(BOOL)_spritesheet;
 
+-(void) createCharacterWithXMLFile:(NSString *)_xmlStr andNamePrefix:(NSString *)_prefix andSpriteSheet:(BOOL)_spritesheet;
 -(void) createCharacterWithXMLFile:(NSString *)_xmlStr andAtlasInfoFile:(NSString *)_atlasInfo;
 -(void) createCharacterWithXMLFile:(NSString *)_xmlStr;
-
 
 -(void) createCharacterAnimationsFromXML:(NSString *)_xmlStr;
 
@@ -64,13 +64,11 @@
 
 // ANIMATION MANAGEMENT
 
-
 -(void) parseAnimations;
 -(void) setAmplitude:(float)_amplitude;
 -(void) playAnimation:(NSString *)_animStr loop:(BOOL)_loop wait:(BOOL)_wait;
 -(void) stopAnimation;
 -(void) setFPS:(float)_fps;
-
 
 -(NSString *) getCurrentAnimation;
 
@@ -80,14 +78,12 @@
 -(void)             executeEvent:(TDAnimEvent *)_evt;
 -(TDAnimEvent *)    getEventForFrame:(int)_frame inAnimation:(NSString *)_animStr;
 
-
-
-
 // CHILDREN MANAGEMENT
 
--(void)                     addElement:(TDAnimSpriteElement *)_element withName:(NSString *)_name andParent:(NSString *)_parentStr;
--(TDAnimSpriteElement *)    getChildByName:(NSString *)_name;
-
+-(void) addElement:(TDAnimSpriteElement *)_element withName:(NSString *)_name andParent:(NSString *)_parentStr;
+-(TDAnimSpriteElement *) getChildByName:(NSString *)_name;
+-(void) addPoint:(TDAnimPointElement *)_point withName:(NSString *)_name andParent:(NSString *)_parentStr;
+-(TDAnimPointElement *) getPointByName:(NSString *)_name;
 
 @end
 

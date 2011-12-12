@@ -7,9 +7,10 @@
 //
 
 #import <Foundation/Foundation.h>
-
+#import "cocos2d.h"
 
 #import "TDAnimSpriteElement.h"
+#import "TDAnimPointElement.h"
 #import "TDAnimTransformation.h"
 #import "TBXML.h"
 
@@ -32,15 +33,16 @@ typedef struct
     
 } NodeInfo;
 
-@interface TDAnimParser : NSObject {
+@interface TDAnimParser : CCNode {
     
     TBXML   *tbxml;
     BOOL    useSpriteSheet;
 }
 
--(BOOL) parseXML:(NSString *)_fileStr toCharacter:(TDAnimCharacter *)_character;
+-(BOOL) parseXML:(NSString *)_fileStr toCharacter:(TDAnimCharacter *)_character namePrefix:(NSString *)_prefix;
 -(BOOL) parseXMLAnimationFile:(NSString *)_fileStr toCharacter:(TDAnimCharacter *)_character;
 -(BOOL) parseXML:(NSString *)_fileStr toCharacter:(TDAnimCharacter *)_character withAtlasFile:(NSString *)_atlasInfo;
+-(BOOL) parseXML:(NSString *)_fileStr toCharacter:(TDAnimCharacter *)_character withNamePrefix:(NSString *)_prefix withSpriteSheet:(BOOL)_spritesheet;
 
 
 @end

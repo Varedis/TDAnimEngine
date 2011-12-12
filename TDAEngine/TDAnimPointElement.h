@@ -10,7 +10,7 @@
 #import "cocos2d.h"
 #import "TDAnimTransformation.h"
 
-@interface TDAnimSpriteElement : CCSprite {
+@interface TDAnimPointElement : CCNode {
     NSString                *name;
     NSMutableDictionary    *animationTable;
     CGPoint                 originalLoc;

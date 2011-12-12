@@ -6,40 +6,35 @@
 //  Copyright 2011 Wieden + Kennedy. All rights reserved.
 //
 
-#import "TDAnimSpriteElement.h"
+#import "TDAnimPointElement.h"
 
 
-@implementation TDAnimSpriteElement
+@implementation TDAnimPointElement
 
 @synthesize animationTable, name;
 
--(void) dealloc
-{
+-(void) dealloc {
     [name release];
     [animationTable release];
     [super dealloc];
 }
 
-
 -(id) init {
     if ((self = [super init])) {
         self.animationTable = [NSMutableDictionary dictionary];   
         amplitude = 1.0f;
+        
+        self.contentSize = CGSizeMake(1.0f, 1.0f);
     }
     return self;
 }
 
-
-
-
--(void) setAnchorPointPixels:(CGPoint)_anchorPoint;
-{
+-(void) setAnchorPointPixels:(CGPoint)_anchorPoint {
     float ax = _anchorPoint.x/self.contentSize.width;
     float ay = (self.contentSize.height-_anchorPoint.y)/self.contentSize.height;
     
     [self setAnchorPoint:CGPointMake(ax, ay)];
 }
-
 
 -(void) __playFrame:(int)_frame forAnimation:(NSString *)_anim {
     NSArray *transfList = [[self.animationTable valueForKey:_anim] objectAtIndex:_frame];
@@ -60,15 +55,11 @@
     }
 }
 
-
--(void) __setAmplitude:(float)_amp
-{
+-(void) __setAmplitude:(float)_amp {
     amplitude = _amp;
 }
 
-
--(void) applyLocAtAxis:(NSString *)_axis value:(float)_val
-{
+-(void) applyLocAtAxis:(NSString *)_axis value:(float)_val {
     // we work with one axis for now
     CGPoint addLoc = CGPointZero;
     
@@ -78,7 +69,6 @@
     self.position = ccpAdd(originalLoc, addLoc);    
 }
 
-
 -(void) applyRotAtAxis:(NSString *)_axis value:(float)_val {
     // it's 2d so we work just with one axis
     // but it needs to be multiplied by -1 (because of maya rotation system)
@@ -87,8 +77,7 @@
 
 }
 
--(void) applySclAtAxis:(NSString *)_axis value:(float)_val
-{
+-(void) applySclAtAxis:(NSString *)_axis value:(float)_val {
     CGPoint setScl = CGPointMake(self.scaleX, self.scaleY);
     
     if ([_axis isEqualToString:@"x"]) setScl.x = _val * amplitude;
@@ -99,10 +88,7 @@
     
 }
 
-
-
--(void) __dumpAnimations
-{
+-(void) __dumpAnimations {
     NSLog(@" ");
     NSLog(@"%@", self.name);
     NSLog(@"---------\n");
@@ -128,8 +114,6 @@
         }
     }
 }
-
-
 
 -(void) __processFrames {
     originalLoc = self.position;
@@ -241,30 +225,22 @@
 }
 
 
--(TDAnimTransformation *) __getTransformationType:(NSString *)_type fromFrameTransformation:(NSArray *)_translist
-{
-    for (TDAnimTransformation *tr in _translist)
-    {
+-(TDAnimTransformation *) __getTransformationType:(NSString *)_type fromFrameTransformation:(NSArray *)_translist {
+    for (TDAnimTransformation *tr in _translist) {
         if ([tr.type isEqualToString:_type]) return tr;
     }
     
     return nil;
 }
 
--(TDAnimTransformation *) __getNextTransformationType:(NSString *)_type fromFrameNumber:(int)_f onAnimation:(NSString *)_anStr 
-{
+-(TDAnimTransformation *) __getNextTransformationType:(NSString *)_type fromFrameNumber:(int)_f onAnimation:(NSString *)_anStr {
     NSArray *frames = [self.animationTable valueForKey:_anStr];
     
-    for (unsigned int f=_f; f<frames.count; f++)
-    {
-        
+    for (unsigned int f=_f; f<frames.count; f++) {
         if ([frames objectAtIndex:f]!=[NSNull null]){
-           
             NSArray *frame = [frames objectAtIndex:f];
             
-            
-            for (unsigned int tl=0; tl < frame.count; tl++)
-            {
+            for (unsigned int tl=0; tl < frame.count; tl++) {
                 TDAnimTransformation *tf = [frame objectAtIndex:tl];
 
                 if ([tf.type isEqualToString:_type]) {
@@ -275,13 +251,5 @@
     }
     return nil;
 }
-
-/*-(void) draw
-{
-    glColor4f(0, 0, 1, 1);
-    glLineWidth(5.0);
-    
-    ccDrawCircle(ccp(0, 0), 40, 0, 4, NO);  
-}*/
 
 @end
